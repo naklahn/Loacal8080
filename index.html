@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width", intitial-scale="1.0">
+        <title> Weather App </title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <!-- Scene Navigation -->
+        <div id="scene-nav-container">
+            <div class="lower-third-header">
+                <div class="nav-tabs">
+                    <button class="active-tab-cap" type="button" aria-label="Settings">
+                        <img src="settingicon.jpeg" alt="" class="active-tab-cap-icon">
+                    </button>
+                    <button class="nav-btn active" data-scene="scene-welcome">WELCOME</button>
+                    <button class="nav-btn" data-scene="scene-intro">INTRO</button>
+                    <button class="nav-btn" data-scene="scene-now">NOW</button>
+                    <button class="nav-btn" data-scene="scene-radar">RADAR</button>
+                    <button class="nav-btn" data-scene="scene-flex-1">FLEX 1</button>
+                    <button class="nav-btn" data-scene="scene-hourly">HOURLY</button>
+                    <button class="nav-btn" data-scene="scene-7-day">7 DAY</button>
+                    <button class="nav-btn" data-scene="scene-flex-2">FLEX 2</button>
+                </div>
+                <div class="header-readouts" aria-hidden="false">
+                    <div class="status-pill" id="header-time" aria-live="polite">--:--</div>
+                    <div class="status-pill" id="header-temp">--&deg;</div>
+                </div>
+            </div>
+            <div id="scene-nav-background">
+                <div class="lower-third-text-scrollbar">CURRENT CONDITIONS | HUMIDITY | DEW POINT | PRESSURE | VISIBILITY | WIND | GUSTS | HEAT INDEX</div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="settings-modal" hidden>
+            <div class="settings-modal-backdrop" data-settings-close></div>
+            <div class="settings-modal-panel" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+                <button class="settings-modal-close" type="button" aria-label="Close settings" data-settings-close>&times;</button>
+                <p class="settings-modal-kicker">SETTINGS</p>
+                <h2 id="settings-modal-title">Change Location</h2>
+                <p class="settings-modal-copy">Enter a city to refresh the weather data.</p>
+                <div class="settings-modal-form">
+                    <input type="text" id="settings-city-input" placeholder="Enter city name">
+                    <button id="settings-search-button" type="button">Search</button>
+                </div>
+                <div class="settings-api-section">
+                    <label class="settings-api-label" for="settings-airnow-api-key">AirNow API Key</label>
+                    <input type="password" id="settings-airnow-api-key" placeholder="Enter AirNow API key">
+                    <a class="settings-api-link" href="https://www.airnowapi.org/" target="_blank" rel="noreferrer">AirNow API website</a>
+                </div>
+                <label class="settings-toggle" for="settings-auto-advance-toggle">
+                    <span class="settings-toggle-text">Auto Advance Scenes</span>
+                    <input type="checkbox" id="settings-auto-advance-toggle" checked>
+                </label>
+                <label class="settings-toggle" for="settings-mute-toggle">
+                    <span class="settings-toggle-text">Mute Audio</span>
+                    <input type="checkbox" id="settings-mute-toggle">
+                </label>
+                <div class="settings-debug-tabs" aria-label="Scene debug shortcuts">
+                    <p class="settings-debug-tabs-label">Scene Shortcuts</p>
+                    <div id="settings-scene-buttons" class="settings-debug-tabs-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scene: Welcome -->
+        <div id="scene-welcome" class="scene active">
+            <div id="welcome-panel" class="welcome-panel">
+                <h1 id="welcome-scene-title" class="scene-placeholder-label">WELCOME</h1>
+                <p class="welcome-copy-line">Thank you for choosing Local 8080.</p>
+                <p class="welcome-copy-line">Please select your location from the setting menu.</p>
+                <p class="welcome-copy-line">Some features may require a free API key. Follow the links, then copy and paste the key to access these features.</p>
+            </div>
+        </div>
+
+        <!-- Main Scene: Intro -->
+        <div id="scene-intro" class="scene">
+            <div id="intro-panel" class="intro-panel">
+                <p id="intro-greeting" class="intro-greeting intro-step">Good Morning</p>
+                <p id="intro-sentence" class="intro-sentence intro-step">Your latest weather update is loading.</p>
+                <p id="intro-now-for" class="intro-now-for intro-step">Now for your</p>
+                <div id="intro-brand" class="intro-brand" aria-label="Local 8080">
+                    <p class="intro-local">Local</p>
+                    <p class="intro-8080"><span class="intro-8">8</span><span class="intro-080">080</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scene: Now (Dashboard) -->
+        <div id="scene-now" class="scene">
+            <div id="scene-two">
+                <div class="scene-header">
+                    <div>
+                        <h2>NOW</h2>
+                        <div class="scene-city-header">
+                            <p id="scene-location">City Name</p>
+                        </div>
+                    </div> 
+                </div>
+                <div class="scene-main">
+                    <div class="scene-left">
+                        <div id="scene-icon" class="scene-icon"></div>
+                        <p id="scene-condition" class="scene-condition"></p>
+                        <div class="scene-temp"><span id="scene-temperature"></span></div>
+                    </div>
+                    <div class="scene-stats">
+                        <div class="current-conditions-text">
+                            <p>Humidity</p>
+                            <p>Dew Point</p>
+                            <p>Pressure</p>
+                            <p>Visibility</p>
+                            <p>Wind</p>
+                            <p>Gusts</p>
+                            <p>Heat Index</p>
+                        </div>
+                        <div class="current-conditions-values">
+                            <p><span id="scene-humidity"></span>%</p>
+                            <p><span id="scene-dewpoint"></span></p>
+                            <p><span id="scene-pressure-value"></span>&nbsp;<span id="scene-pressure-unit"></span></p>
+                            <p><span id="scene-visibility-value"></span>&nbsp;<span id="scene-visibility-unit"></span></p>
+                            <p><span id="scene-wind"></span></p>
+                            <p><span id="scene-gust"></span></p>
+                            <p><span id="scene-heat-index"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scene: Radar -->
+        <div id="scene-radar" class="scene">
+            <div id="scene-eleven">
+                <div class="scene-header">
+                    <div>
+                        <h2>LOCAL RADAR</h2>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-single radar-main">
+                    <div id="radar-loop-pane" class="radar-loop-pane" role="img" aria-label="Local radar loop"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scene: Hourly -->
+        <div id="scene-hourly" class="scene">
+            <div id="scene-hour">
+                <div class="scene-header">
+                    <div>
+                        <h2>Next 7 Hours</h2>
+                        <div class="scene-city-header">
+                            <p id="hour-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="week-horizontal-flare" aria-hidden="true"></div>
+                <div class="week-main">
+                    <div class="week-day-card">
+                        <p id="hour-label-1" class="week-day-label">---</p>
+                        <div id="hour-icon-1" class="week-day-icon"></div>
+                        <p id="hour-condition-1" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-1"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-1"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-2" class="week-day-label">---</p>
+                        <div id="hour-icon-2" class="week-day-icon"></div>
+                        <p id="hour-condition-2" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-2"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-2"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-3" class="week-day-label">---</p>
+                        <div id="hour-icon-3" class="week-day-icon"></div>
+                        <p id="hour-condition-3" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-3"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-3"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-4" class="week-day-label">---</p>
+                        <div id="hour-icon-4" class="week-day-icon"></div>
+                        <p id="hour-condition-4" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-4"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-4"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-5" class="week-day-label">---</p>
+                        <div id="hour-icon-5" class="week-day-icon"></div>
+                        <p id="hour-condition-5" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-5"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-5"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-6" class="week-day-label">---</p>
+                        <div id="hour-icon-6" class="week-day-icon"></div>
+                        <p id="hour-condition-6" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-6"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-6"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="hour-label-7" class="week-day-label">---</p>
+                        <div id="hour-icon-7" class="week-day-icon"></div>
+                        <p id="hour-condition-7" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="hour-temp-7"></span></p>
+                            <p class="week-hi-low-line"><span id="hour-empty-7"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Scene: 7 Day -->
+        <div id="scene-7-day" class="scene">
+            <div id="scene-week">
+                <div class="scene-header">
+                    <div>
+                        <h2>The Week Ahead</h2>
+                        <div class="scene-city-header">
+                            <p id="week-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="week-horizontal-flare" aria-hidden="true"></div>
+                <div class="week-main">
+                    <div class="week-day-card">
+                        <p id="week-day-label-1" class="week-day-label">---</p>
+                        <div id="week-day-icon-1" class="week-day-icon"></div>
+                        <p id="week-day-condition-1" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-1"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-1"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-2" class="week-day-label">---</p>
+                        <div id="week-day-icon-2" class="week-day-icon"></div>
+                        <p id="week-day-condition-2" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-2"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-2"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-3" class="week-day-label">---</p>
+                        <div id="week-day-icon-3" class="week-day-icon"></div>
+                        <p id="week-day-condition-3" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-3"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-3"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-4" class="week-day-label">---</p>
+                        <div id="week-day-icon-4" class="week-day-icon"></div>
+                        <p id="week-day-condition-4" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-4"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-4"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-5" class="week-day-label">---</p>
+                        <div id="week-day-icon-5" class="week-day-icon"></div>
+                        <p id="week-day-condition-5" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-5"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-5"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-6" class="week-day-label">---</p>
+                        <div id="week-day-icon-6" class="week-day-icon"></div>
+                        <p id="week-day-condition-6" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-6"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-6"></span></p>
+                        </div>
+                    </div>
+                    <div class="week-flare" aria-hidden="true"></div>
+                    <div class="week-day-card">
+                        <p id="week-day-label-7" class="week-day-label">---</p>
+                        <div id="week-day-icon-7" class="week-day-icon"></div>
+                        <p id="week-day-condition-7" class="week-day-condition"></p>
+                        <div class="week-hi-low-wrap">
+                            <p class="week-hi-low-line"><span id="week-day-high-7"></span></p>
+                            <p class="week-hi-low-line"><span id="week-day-low-7"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Flex/Optional Scenes -->
+        <div id="scene-almanac" class="scene"><h1 class="scene-placeholder-label">ALMANAC</h1></div>
+        <div id="scene-36-hour" class="scene">
+            <div id="scene-three">
+                <div class="scene-header">
+                    <div>
+                        <h2 id="scene-36-heading">TODAY</h2>
+                        <div class="scene-city-header">
+                            <p id="scene-36-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-swapped">
+                    <div class="scene-36-story">
+                        <p id="scene-36-text" class="scene-36-text"></p>
+                    </div>
+                    <div id="scene-36-image-pane" class="scene-36-image-pane"></div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-bulletin" class="scene">
+            <div id="scene-four">
+                <div class="scene-header">
+                    <div>
+                        <h2>WEATHER BULLETIN</h2>
+                        <div class="scene-city-header bulletin-badge">
+                            <p id="bulletin-location">THE NATIONAL WEATHER SERVICE</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-single">
+                    <div class="bulletin-block">
+                        <p id="bulletin-text"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-air" class="scene">
+            <div id="scene-five">
+                <div class="scene-header">
+                    <div>
+                        <h2>AIR QUALITY FORECAST</h2>
+                        <div class="scene-city-header">
+                            <p id="air-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-single">
+                    <div class="air-block">
+                        <p id="air-day" class="air-day">---</p>
+                        <div class="air-primary-group">
+                            <p id="air-primary-label" class="air-primary-label">Primary pollutant:</p>
+                            <p id="air-primary-value" class="air-primary-value">N/A</p>
+                        </div>
+                    </div>
+                    <div class="air-scale-wrap" aria-hidden="true">
+                        <div class="air-scale">
+                            <div class="air-scale-band air-scale-band-maroon"></div>
+                            <div class="air-scale-band air-scale-band-red"></div>
+                            <div class="air-scale-band air-scale-band-orange"></div>
+                            <div class="air-scale-band air-scale-band-yellow"></div>
+                            <div class="air-scale-band air-scale-band-green"></div>
+                        </div>
+                        <div class="air-scale-pointer"></div>
+                        <p id="air-scale-readout" class="air-scale-readout"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-sun" class="scene">
+            <div id="scene-six">
+                <div class="scene-header">
+                    <div>
+                        <h2>HELIOLOGICAL FORECAST</h2>
+                        <div class="scene-city-header">
+                            <p id="sun-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-no-glare">
+                    <div class="sun-left-pane">
+                        <div class="sun-arc-wrap" aria-label="Sunrise and sunset timeline">
+                            <div class="sun-arc" aria-hidden="true"></div>
+                            <div id="sun-progress-icon" class="sun-progress-icon" aria-hidden="true"></div>
+                            <div class="sun-main-times-wrap">
+                                <div class="sun-main-times">
+                                    <p class="sun-main-time-row">SUNRISE <span id="sunrise-time" class="sun-main-time-value">--:--</span></p>
+                                    <div class="sun-main-time-divider" aria-hidden="true"></div>
+                                    <p class="sun-main-time-row">SUNSET <span id="sunset-time" class="sun-main-time-value">--:--</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sun-right-pane">
+                        <p class="sun-uv-heading">UV CONDITIONS</p>
+                        <div class="sun-uv-grid">
+                            <div class="sun-uv-current-block">
+                                <p class="sun-uv-current-label">CURRENT</p>
+                                <p id="sun-uv-value" class="sun-uv-value">--</p>
+                                <p id="sun-uv-current-time" class="sun-uv-peak-time">--</p>
+                                <p id="sun-uv-category" class="sun-uv-category">LOW</p>
+                            </div>
+                            <div class="sun-uv-current-block sun-uv-peak-block">
+                                <p class="sun-uv-current-label">HIGHEST</p>
+                                <p id="sun-uv-peak-value" class="sun-uv-value">--</p>
+                                <p id="sun-uv-peak-time" class="sun-uv-peak-time">--:--</p>
+                                <p id="sun-uv-peak-category" class="sun-uv-category">LOW</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-moon" class="scene">
+            <div id="scene-seven">
+                <div class="scene-header">
+                    <div>
+                        <h2>LUNAR FORECAST</h2>
+                        <div class="scene-city-header">
+                            <p id="moon-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-no-glare">
+                    <div class="moon-left-pane">
+                        <p class="moon-conditions-heading">LUNAR CONDITIONS</p>
+                        <div class="moon-conditions-grid">
+                            <div class="moon-conditions-block">
+                                <p class="moon-conditions-label">SIZE</p>
+                                <p id="moon-size-value" class="moon-conditions-value">--%</p>
+                            </div>
+                            <div class="moon-conditions-block">
+                                <p class="moon-conditions-label">LUMINOSITY</p>
+                                <p id="moon-illumination-value" class="moon-conditions-value">--%</p>
+                            </div>
+                        </div>
+                        <div class="moon-next-phase-wrap">
+                            <p class="moon-next-phase-label">NEXT MOON PHASE</p>
+                            <p id="moon-next-phase-name" class="moon-next-phase-name">--</p>
+                            <p id="moon-next-phase-date" class="moon-next-phase-date">--</p>
+                        </div>
+                    </div>
+                    <div class="moon-right-pane">
+                        <div class="moon-center">
+                            <div id="moon-image" class="moon-image" role="img" aria-label="Current moon phase"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-allergy" class="scene">
+            <div id="scene-eight">
+                <div class="scene-header">
+                    <div>
+                        <h2>ALLERGY OUTLOOK</h2>
+                        <div class="scene-city-header">
+                            <p id="allergy-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main allergy-main">
+                    <div class="allergy-left-pane">
+                        <div id="allergy-season-icon" class="allergy-season-icon" role="img" aria-label="Current allergy season"></div>
+                        <p id="allergy-season-label" class="allergy-season-label">--</p>
+                    </div>
+                    <div class="allergy-chart-pane">
+                        <div class="allergy-y-axis" aria-hidden="true">
+                            <div class="allergy-y-tick"><span>HIGH</span></div>
+                            <div class="allergy-y-tick"><span>MED-HIGH</span></div>
+                            <div class="allergy-y-tick"><span>MEDIUM</span></div>
+                            <div class="allergy-y-tick"><span>LOW-MED</span></div>
+                            <div class="allergy-y-tick"><span>LOW</span></div>
+                        </div>
+                        <div class="allergy-chart-plot">
+                            <div class="allergy-chart-grid" aria-label="Five period pollen outlook">
+                                <div class="allergy-bar-column">
+                                    <div class="allergy-bar-track"><div id="allergy-bar-fill-1" class="allergy-bar-fill allergy-bar-low"></div></div>
+                                    <p id="allergy-bar-day-1" class="allergy-bar-day">---</p>
+                                </div>
+                                <div class="allergy-bar-column">
+                                    <div class="allergy-bar-track"><div id="allergy-bar-fill-2" class="allergy-bar-fill allergy-bar-low"></div></div>
+                                    <p id="allergy-bar-day-2" class="allergy-bar-day">---</p>
+                                </div>
+                                <div class="allergy-bar-column">
+                                    <div class="allergy-bar-track"><div id="allergy-bar-fill-3" class="allergy-bar-fill allergy-bar-low"></div></div>
+                                    <p id="allergy-bar-day-3" class="allergy-bar-day">---</p>
+                                </div>
+                                <div class="allergy-bar-column">
+                                    <div class="allergy-bar-track"><div id="allergy-bar-fill-4" class="allergy-bar-fill allergy-bar-low"></div></div>
+                                    <p id="allergy-bar-day-4" class="allergy-bar-day">---</p>
+                                </div>
+                                <div class="allergy-bar-column">
+                                    <div class="allergy-bar-track"><div id="allergy-bar-fill-5" class="allergy-bar-fill allergy-bar-low"></div></div>
+                                    <p id="allergy-bar-day-5" class="allergy-bar-day">---</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-marine" class="scene">
+            <div id="scene-ten">
+                <div class="scene-header">
+                    <div>
+                        <h2>MARINE</h2>
+                        <div class="scene-city-header">
+                            <p id="marine-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-single">
+                    <div id="marine-block" class="marine-block">
+                        <p id="marine-gauge-name" class="marine-gauge-name">--</p>
+                        <div class="marine-primary-grid">
+                            <div class="marine-primary-item">
+                                <p class="marine-value-label marine-tide-heading">TIDAL FORECAST</p>
+                                <p id="marine-current-height" class="marine-value-main marine-value-main-text">--</p>
+                                <div id="marine-tide-forecast" class="marine-tide-list">
+                                    <p class="marine-tide-line">--</p>
+                                </div>
+                            </div>
+                            <div class="marine-primary-item">
+                                <p class="marine-field-row"><span class="marine-value-label marine-tide-heading">WATER TEMP:</span> <span id="marine-water-temp" class="marine-field-value">--</span></p>
+                                <p class="marine-field-row"><span class="marine-value-label marine-tide-heading">WIND:</span> <span id="marine-wind" class="marine-field-value">--</span></p>
+                                <p class="marine-field-row"><span class="marine-value-label marine-tide-heading">WAVES:</span> <span id="marine-wave-height" class="marine-field-value">--</span></p>
+                            </div>
+                        </div>
+                        <div id="marine-considerations" class="marine-considerations">
+                            <p class="marine-field-row"><span class="marine-value-label marine-tide-heading">SPECIAL CONSIDERATIONS:</span> <span class="marine-field-value">--</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="scene-hydrological" class="scene">
+            <div id="scene-nine">
+                <div class="scene-header">
+                    <div>
+                        <h2>HYDROLOGICAL</h2>
+                        <div class="scene-city-header">
+                            <p id="hydrological-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hydro-main" aria-label="Five nearest hydrological gauges">
+                    <article id="hydro-gauge-card-1" class="hydro-gauge-card">
+                        <p id="hydro-gauge-name-1" class="hydro-gauge-name">--</p>
+                        <p id="hydro-gauge-meta-1" class="hydro-gauge-meta">---</p>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-stage-value-1" class="hydro-meter-pill">STAGE --</span>
+                            <div id="hydro-stage-meter-1" class="hydro-meter" role="img" aria-label="Stage category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-flow-value-1" class="hydro-meter-pill">FLOW --</span>
+                            <div id="hydro-flow-meter-1" class="hydro-meter" role="img" aria-label="Flow category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <p id="hydro-impact-1" class="hydro-impact">No impact statement available.</p>
+                    </article>
+                    <article id="hydro-gauge-card-2" class="hydro-gauge-card">
+                        <p id="hydro-gauge-name-2" class="hydro-gauge-name">--</p>
+                        <p id="hydro-gauge-meta-2" class="hydro-gauge-meta">---</p>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-stage-value-2" class="hydro-meter-pill">STAGE --</span>
+                            <div id="hydro-stage-meter-2" class="hydro-meter" role="img" aria-label="Stage category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-flow-value-2" class="hydro-meter-pill">FLOW --</span>
+                            <div id="hydro-flow-meter-2" class="hydro-meter" role="img" aria-label="Flow category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <p id="hydro-impact-2" class="hydro-impact">No impact statement available.</p>
+                    </article>
+                    <article id="hydro-gauge-card-3" class="hydro-gauge-card">
+                        <p id="hydro-gauge-name-3" class="hydro-gauge-name">--</p>
+                        <p id="hydro-gauge-meta-3" class="hydro-gauge-meta">---</p>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-stage-value-3" class="hydro-meter-pill">STAGE --</span>
+                            <div id="hydro-stage-meter-3" class="hydro-meter" role="img" aria-label="Stage category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-flow-value-3" class="hydro-meter-pill">FLOW --</span>
+                            <div id="hydro-flow-meter-3" class="hydro-meter" role="img" aria-label="Flow category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <p id="hydro-impact-3" class="hydro-impact">No impact statement available.</p>
+                    </article>
+                    <article id="hydro-gauge-card-4" class="hydro-gauge-card">
+                        <p id="hydro-gauge-name-4" class="hydro-gauge-name">--</p>
+                        <p id="hydro-gauge-meta-4" class="hydro-gauge-meta">---</p>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-stage-value-4" class="hydro-meter-pill">STAGE --</span>
+                            <div id="hydro-stage-meter-4" class="hydro-meter" role="img" aria-label="Stage category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-flow-value-4" class="hydro-meter-pill">FLOW --</span>
+                            <div id="hydro-flow-meter-4" class="hydro-meter" role="img" aria-label="Flow category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <p id="hydro-impact-4" class="hydro-impact">No impact statement available.</p>
+                    </article>
+                    <article id="hydro-gauge-card-5" class="hydro-gauge-card">
+                        <p id="hydro-gauge-name-5" class="hydro-gauge-name">--</p>
+                        <p id="hydro-gauge-meta-5" class="hydro-gauge-meta">---</p>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-stage-value-5" class="hydro-meter-pill">STAGE --</span>
+                            <div id="hydro-stage-meter-5" class="hydro-meter" role="img" aria-label="Stage category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <div class="hydro-meter-row">
+                            <span id="hydro-flow-value-5" class="hydro-meter-pill">FLOW --</span>
+                            <div id="hydro-flow-meter-5" class="hydro-meter" role="img" aria-label="Flow category meter">
+                                <span class="hydro-meter-segment none"></span>
+                                <span class="hydro-meter-segment action"></span>
+                                <span class="hydro-meter-segment minor"></span>
+                                <span class="hydro-meter-segment moderate"></span>
+                                <span class="hydro-meter-segment major"></span>
+                            </div>
+                        </div>
+                        <p id="hydro-impact-5" class="hydro-impact">No impact statement available.</p>
+                    </article>
+                </div>
+            </div>
+        </div>
+        <div id="scene-ground" class="scene"><h1 class="scene-placeholder-label">GROUND</h1></div>
+        <div id="scene-winter" class="scene">
+            <div id="scene-twelve">
+                <div class="scene-header">
+                    <div>
+                        <h2>WINTER</h2>
+                        <div class="scene-city-header">
+                            <p id="winter-location">City Name</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="scene-main scene-main-single">
+                    <div id="winter-block" class="winter-block">
+                        <p id="winter-primary-label" class="winter-primary-label">PREDICTED SNOWFALL</p>
+                        <div class="winter-primary-row">
+                            <p id="winter-primary-value" class="winter-primary-value">--</p>
+                            <span id="winter-primary-start" class="winter-primary-start">@ --</span>
+                        </div>
+                        <div class="winter-detail-list">
+                            <p class="winter-detail-line marine-field-row"><span class="marine-value-label marine-tide-heading">SNOW DEPTH:</span> <span id="winter-snow-depth" class="marine-field-value">--</span></p>
+                            <p class="winter-detail-line marine-field-row"><span class="marine-value-label marine-tide-heading">ICE ACCUMULATION:</span> <span id="winter-ice-accum" class="marine-field-value">--</span></p>
+                            <p class="winter-detail-line marine-field-row"><span class="marine-value-label marine-tide-heading">WIND GUSTS:</span> <span id="winter-wind-gusts" class="marine-field-value">--</span></p>
+                            <p class="winter-detail-line marine-field-row"><span class="marine-value-label marine-tide-heading">TODAY'S LOW:</span> <span id="winter-today-low" class="marine-field-value">--</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="weather.js"></script>
+    </body>
+</html>
